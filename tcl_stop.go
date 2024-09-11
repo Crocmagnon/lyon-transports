@@ -31,7 +31,7 @@ func NewStop(tclStop TCLStop) Stop {
 
 type Passage struct {
 	Ligne       string   `json:"ligne" example:"49A"`
-	Delays      []string `json:"delays" example:"53 min"`
+	Delays      []string `json:"delais" example:"53 min"`
 	Destination Stop     `json:"destination"`
 }
 
