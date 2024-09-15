@@ -121,7 +121,7 @@ func TestGetVelovStation(t *testing.T) {
 		assert.NilError(t, err)
 
 		assert.DeepEqual(t, station, Station{
-			Name:             "10039 - BOUVIER",
+			Name:             "Bouvier",
 			BikesAvailable:   9,
 			DocksAvailable:   7,
 			AvailabilityCode: 1,

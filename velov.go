@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/carlmjohnson/requests"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"net/http"
+	"strings"
 )
 
 type Station struct {
@@ -41,7 +44,7 @@ func getStation(ctx context.Context, client *http.Client, stationID int) (*Stati
 
 	for _, sInfo := range info.Values {
 		if sInfo.Number == stationID {
-			station.Name = sInfo.Name
+			station.Name = formatName(sInfo.Name)
 			station.BikesAvailable = sInfo.AvailableBikes
 			station.DocksAvailable = sInfo.AvailableBikeStands
 			station.AvailabilityCode = sInfo.AvailabilityCode
@@ -54,4 +57,12 @@ func getStation(ctx context.Context, client *http.Client, stationID int) (*Stati
 	}
 
 	return &station, nil
+}
+
+func formatName(name string) string {
+	nameParts := strings.SplitN(name, " - ", 2)
+	if len(nameParts) >= 2 {
+		name = nameParts[1]
+	}
+	return cases.Title(language.French).String(name)
 }

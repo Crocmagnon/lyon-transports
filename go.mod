@@ -6,6 +6,7 @@ require (
 	github.com/carlmjohnson/requests v0.24.2
 	github.com/danielgtaylor/huma/v2 v2.22.1
 	github.com/jarcoal/httpmock v1.3.1
+	golang.org/x/text v0.18.0
 	gotest.tools/v3 v3.5.1
 )
 
