@@ -28,6 +28,10 @@ type stopOutput struct {
 	Body Passages
 }
 
+type velovOutput struct {
+	Body Station
+}
+
 func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 	huma.Register(api, huma.Operation{
 		OperationID: "healthcheck",
@@ -42,7 +46,7 @@ func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 	})
 
 	huma.Get(api, "/tcl/stop/{stopID}", func(ctx context.Context, input *struct {
-		StopID int `path:"stopID" doc:"Stop id to monitor. Can be obtained using https://data.grandlyon.com/jeux-de-donnees/points-arret-reseau-transports-commun-lyonnais/donnees"`
+		StopID int `path:"stopID" doc:"Stop id to monitor. Can be obtained using https://data.grandlyon.com/portail/fr/jeux-de-donnees/points-arret-reseau-transports-commun-lyonnais/donnees"`
 	}) (*stopOutput, error) {
 		passages, err := getPassages(ctx, glConfig, now, input.StopID)
 		if errors.Is(err, errNoPassageFound) {
@@ -54,6 +58,21 @@ func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 		}
 
 		return &stopOutput{Body: *passages}, nil
+	})
+
+	huma.Get(api, "/velov/station/{stationID}", func(ctx context.Context, input *struct {
+		StationID int `path:"stationID" doc:"Station id to monitor. Can be obtained using https://data.grandlyon.com/portail/fr/jeux-de-donnees/stations-velo-v-metropole-lyon/donnees"`
+	}) (*velovOutput, error) {
+		station, err := getStation(ctx, glConfig.Client, input.StationID)
+		if errors.Is(err, errStationNotFound) {
+			return nil, huma.NewError(http.StatusNotFound, "station not found")
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &velovOutput{Body: *station}, nil
 	})
 }
 

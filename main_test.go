@@ -86,3 +86,45 @@ func TestGetStop(t *testing.T) {
 		})
 	})
 }
+
+func TestGetVelovStation(t *testing.T) {
+	_, api := humatest.New(t)
+
+	transport := httpmock.NewMockTransport()
+	client := &http.Client{
+		Transport: transport,
+	}
+	config := GrandLyonConfig{
+		Client: client,
+	}
+
+	transport.RegisterResponder(http.MethodGet,
+		"https://data.grandlyon.com/fr/datapusher/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1",
+		httpmock.NewBytesResponder(http.StatusOK, httpmock.File("./testdata/station_info.json").Bytes()))
+	//transport.RegisterResponder(http.MethodGet,
+	//	"https://download.data.grandlyon.com/files/rdata/jcd_jcdecaux.jcdvelov/station_status.json",
+	//	httpmock.NewBytesResponder(http.StatusOK, httpmock.File("./testdata/station_status.json").Bytes()))
+
+	addRoutes(api, config, time.Now)
+
+	t.Run("station not found", func(t *testing.T) {
+		resp := api.Get("/velov/station/0")
+		assert.Equal(t, resp.Code, http.StatusNotFound)
+	})
+
+	t.Run("station exists", func(t *testing.T) {
+		resp := api.Get("/velov/station/10039")
+		assert.Equal(t, resp.Code, http.StatusOK)
+
+		var station Station
+		err := json.Unmarshal(resp.Body.Bytes(), &station)
+		assert.NilError(t, err)
+
+		assert.DeepEqual(t, station, Station{
+			Name:             "10039 - BOUVIER",
+			BikesAvailable:   9,
+			DocksAvailable:   7,
+			AvailabilityCode: 1,
+		})
+	})
+}
