@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humago"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"net/http"
 	"time"
 )
@@ -16,6 +18,7 @@ type Options struct {
 	Port              int    `help:"Port to listen on" default:"8888"`
 	GrandLyonUsername string `help:"Grand Lyon username" short:"u" required:"true"`
 	GrandLyonPassword string `help:"Grand Lyon password" short:"p" required:"true"`
+	CORSAllowedOrigin string `help:"CORS allowed origin"`
 }
 
 type statusOutput struct {
@@ -80,8 +83,12 @@ func main() {
 	// Create a CLI app which takes a port option.
 	cli := humacli.New(func(hooks humacli.Hooks, options *Options) {
 		// Create a new router & API
-		router := http.NewServeMux()
-		api := humago.New(router, huma.DefaultConfig("My API", "1.0.0"))
+		router := chi.NewRouter()
+		router.Use(cors.Handler(cors.Options{
+			AllowedOrigins: []string{options.CORSAllowedOrigin},
+		}))
+
+		api := humachi.New(router, huma.DefaultConfig("My API", "1.0.0"))
 		server := http.Server{
 			Addr:    fmt.Sprintf("%s:%d", options.Host, options.Port),
 			Handler: router,
