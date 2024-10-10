@@ -138,7 +138,7 @@ func logging(ctx huma.Context, next func(huma.Context)) {
 	start := time.Now()
 	next(ctx)
 	elapsed := time.Since(start)
-	slog.InfoContext(ctx.Context(), "response",
+	slog.InfoContext(ctx.Context(), "received request",
 		"method", ctx.Method(),
 		"path", ctx.URL().Path,
 		"status", ctx.Status(),
