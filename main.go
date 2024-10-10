@@ -9,6 +9,8 @@ import (
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/google/uuid"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -53,10 +55,12 @@ func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 	}) (*stopOutput, error) {
 		passages, err := getPassages(ctx, glConfig, now, input.StopID)
 		if errors.Is(err, errNoPassageFound) {
+			slog.ErrorContext(ctx, "passage not found", getRequestIDAttr(ctx))
 			return nil, huma.NewError(http.StatusNotFound, "no passage found")
 		}
 
 		if err != nil {
+			slog.ErrorContext(ctx, "error getting passages", "err", err, getRequestIDAttr(ctx))
 			return nil, err
 		}
 
@@ -68,10 +72,12 @@ func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 	}) (*velovOutput, error) {
 		station, err := getStation(ctx, glConfig.Client, input.StationID)
 		if errors.Is(err, errStationNotFound) {
+			slog.ErrorContext(ctx, "station not found", getRequestIDAttr(ctx))
 			return nil, huma.NewError(http.StatusNotFound, "station not found")
 		}
 
 		if err != nil {
+			slog.ErrorContext(ctx, "error getting station", "err", err, getRequestIDAttr(ctx))
 			return nil, err
 		}
 
@@ -94,6 +100,8 @@ func main() {
 			Handler: router,
 		}
 
+		api.UseMiddleware(logging)
+
 		glConfig := GrandLyonConfig{
 			Username: options.GrandLyonUsername,
 			Password: options.GrandLyonPassword,
@@ -102,9 +110,9 @@ func main() {
 		addRoutes(api, glConfig, time.Now)
 
 		hooks.OnStart(func() {
-			fmt.Printf("Starting server on %s...\n", server.Addr)
+			slog.Info("Starting server", "addr", server.Addr)
 			if err := server.ListenAndServe(); err != nil {
-				fmt.Printf("Error running server: %s\n", err)
+				slog.Error("Error running server", "err", err)
 			}
 		})
 
@@ -112,10 +120,34 @@ func main() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := server.Shutdown(ctx); err != nil {
-				fmt.Printf("Error shutting down server: %s\n", err)
+				slog.ErrorContext(ctx, "Error shutting down server", "err", err)
 			}
 		})
 	})
 
 	cli.Run()
+}
+
+type contextKey string
+
+const requestIDKey contextKey = "request_id"
+
+func logging(ctx huma.Context, next func(huma.Context)) {
+	reqID := uuid.New().String()
+	ctx = huma.WithValue(ctx, requestIDKey, reqID)
+	start := time.Now()
+	next(ctx)
+	elapsed := time.Since(start)
+	slog.InfoContext(ctx.Context(), "response",
+		"method", ctx.Method(),
+		"path", ctx.URL().Path,
+		"status", ctx.Status(),
+		"duration", elapsed,
+		getRequestIDAttr(ctx.Context()),
+	)
+}
+
+func getRequestIDAttr(ctx context.Context) slog.Attr {
+	val, _ := ctx.Value(requestIDKey).(string)
+	return slog.String("request_id", val)
 }
