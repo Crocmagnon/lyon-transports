@@ -47,11 +47,6 @@ func TestGetStop(t *testing.T) {
 
 	addRoutes(api, config, now)
 
-	t.Run("stop not found", func(t *testing.T) {
-		resp := api.Get("/tcl/stop/0")
-		assert.Equal(t, resp.Code, http.StatusNotFound)
-	})
-
 	t.Run("stop exists", func(t *testing.T) {
 		resp := api.Get("/tcl/stop/290")
 		assert.Equal(t, resp.Code, http.StatusOK)
@@ -101,9 +96,6 @@ func TestGetVelovStation(t *testing.T) {
 	transport.RegisterResponder(http.MethodGet,
 		"https://data.grandlyon.com/fr/datapusher/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1",
 		httpmock.NewBytesResponder(http.StatusOK, httpmock.File("./testdata/station_info.json").Bytes()))
-	//transport.RegisterResponder(http.MethodGet,
-	//	"https://download.data.grandlyon.com/files/rdata/jcd_jcdecaux.jcdvelov/station_status.json",
-	//	httpmock.NewBytesResponder(http.StatusOK, httpmock.File("./testdata/station_status.json").Bytes()))
 
 	addRoutes(api, config, time.Now)
 

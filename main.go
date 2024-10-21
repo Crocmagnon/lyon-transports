@@ -54,11 +54,6 @@ func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 		StopID int `path:"stopID" doc:"Stop id to monitor. Can be obtained using https://data.grandlyon.com/portail/fr/jeux-de-donnees/points-arret-reseau-transports-commun-lyonnais/donnees"`
 	}) (*stopOutput, error) {
 		passages, err := getPassages(ctx, glConfig, now, input.StopID)
-		if errors.Is(err, errNoPassageFound) {
-			slog.ErrorContext(ctx, "passage not found", getRequestIDAttr(ctx))
-			return nil, huma.NewError(http.StatusNotFound, "no passage found")
-		}
-
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting passages", "err", err, getRequestIDAttr(ctx))
 			return nil, err

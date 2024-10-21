@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/carlmjohnson/requests"
 	"net/http"
@@ -53,8 +52,6 @@ func (d delay) String() string {
 	}
 }
 
-var errNoPassageFound = errors.New("no passage found")
-
 func getPassages(ctx context.Context, config GrandLyonConfig, now func() time.Time, stopID int) (*Passages, error) {
 	client := config.Client
 	if client == nil {
@@ -91,10 +88,6 @@ func getPassages(ctx context.Context, config GrandLyonConfig, now func() time.Ti
 		delays := passages[key]
 		delays = append(delays, getDelay(passage.Heurepassage, now()))
 		passages[key] = delays
-	}
-
-	if len(passages) == 0 {
-		return nil, errNoPassageFound
 	}
 
 	var tclStops TCLStops
