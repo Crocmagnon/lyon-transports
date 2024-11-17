@@ -31,13 +31,18 @@ type stationInfo struct {
 var errStationNotFound = errors.New("station not found")
 
 func getStation(ctx context.Context, client *http.Client, stationID int) (*Station, error) {
-	var info stationInfo
+	var (
+		info        stationInfo
+		errResponse string
+	)
+
 	err := requests.URL("https://data.grandlyon.com/fr/datapusher/ws/rdata/jcd_jcdecaux.jcdvelov/all.json?maxfeatures=-1&start=1").
+		AddValidator(requests.ValidatorHandler(requests.DefaultValidator, requests.ToString(&errResponse))).
 		Client(client).
 		ToJSON(&info).
 		Fetch(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("querying station info: %w", err)
+		return nil, fmt.Errorf("querying station info: %w (%v)", err, errResponse)
 	}
 
 	station := Station{}

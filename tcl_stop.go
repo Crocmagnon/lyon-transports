@@ -58,15 +58,19 @@ func getPassages(ctx context.Context, config GrandLyonConfig, now func() time.Ti
 		client = &http.Client{}
 	}
 
-	var tclPassages TCLPassages
+	var (
+		tclPassages TCLPassages
+		errResponse string
+	)
 
 	err := requests.URL("https://download.data.grandlyon.com/ws/rdata/tcl_sytral.tclpassagearret/all.json?maxfeatures=-1").
 		Client(client).
+		AddValidator(requests.ValidatorHandler(requests.DefaultValidator, requests.ToString(&errResponse))).
 		BasicAuth(config.Username, config.Password).
 		ToJSON(&tclPassages).
 		Fetch(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("fetching passages: %w", err)
+		return nil, fmt.Errorf("fetching passages: %w (%v)", err, errResponse)
 	}
 
 	type passageKey struct {
@@ -94,11 +98,12 @@ func getPassages(ctx context.Context, config GrandLyonConfig, now func() time.Ti
 
 	err = requests.URL("https://download.data.grandlyon.com/ws/rdata/tcl_sytral.tclarret/all.json?maxfeatures=-1").
 		Client(client).
+		AddValidator(requests.ValidatorHandler(requests.DefaultValidator, requests.ToString(&errResponse))).
 		BasicAuth(config.Username, config.Password).
 		ToJSON(&tclStops).
 		Fetch(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("fetching stops: %w", err)
+		return nil, fmt.Errorf("fetching stops: %w (%v)", err, errResponse)
 	}
 
 	updated := 0
