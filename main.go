@@ -53,6 +53,31 @@ func addRoutes(api huma.API, glConfig GrandLyonConfig, now func() time.Time) {
 	huma.Get(api, "/tcl/stop/{stopID}", func(ctx context.Context, input *struct {
 		StopID int `path:"stopID" doc:"Stop id to monitor. Can be obtained using https://data.grandlyon.com/portail/fr/jeux-de-donnees/points-arret-reseau-transports-commun-lyonnais/donnees"`
 	}) (*stopOutput, error) {
+		if input.StopID == 0 {
+			return &stopOutput{
+				Body: Passages{
+					Passages: []Passage{
+						{
+							Ligne: "C00",
+							Delays: []string{
+								"Passé",
+								"Proche",
+								"5 min",
+							},
+							Destination: Stop{
+								ID:   0,
+								Name: "Test stop",
+							},
+						},
+					},
+					Stop: Stop{
+						ID:   input.StopID,
+						Name: "Test stop",
+					},
+				},
+			}, nil
+		}
+
 		passages, err := getPassages(ctx, glConfig, now, input.StopID)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting passages", "err", err, getRequestIDAttr(ctx))
